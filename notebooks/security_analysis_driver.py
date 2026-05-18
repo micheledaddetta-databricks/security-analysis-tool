@@ -145,6 +145,35 @@ def processWorkspace(wsrow):
             {"json_": json.dumps(ws_json)},
         )
 
+        # --- custom_checks hook (Task 2) ---
+        try:
+            import sys as _sys
+            if f"/Workspace{basePath()}/notebooks" not in _sys.path:
+                _sys.path.insert(0, f"/Workspace{basePath()}/notebooks")
+            import notebooks.Includes.custom_checks as _cc
+            from databricks.sdk import AccountClient as _AC
+            _client_secret = dbutils.secrets.get(
+                json_["master_name_scope"], json_["client_secret_key"]
+            )
+            _acct = _AC(
+                host=json_.get("accounts_console") or "https://accounts.azuredatabricks.net",
+                account_id=json_["account_id"],
+                azure_tenant_id=json_.get("tenant_id", ""),
+                azure_client_id=json_.get("client_id", ""),
+                azure_client_secret=_client_secret,
+            )
+            for _cid, _score, _details in _cc.run_all(
+                workspace_id=workspace_id,
+                run_id=None,
+                account_client=_acct,
+                central_ws_client=None,
+                audit_warehouse_id=json_.get("audit_warehouse_id"),
+            ):
+                insertIntoControlTable(workspace_id, _cid, _score, _details)
+        except Exception as _e:
+            loggr.exception(f"custom_checks failed for {workspace_id}: {_e}")
+        # --- end custom_checks hook ---
+
 
 # COMMAND ----------
 
