@@ -49,18 +49,32 @@ def load_standalone(json_path: Path) -> dict[tuple[str, int], int]:
 
 
 def load_sat(sql_query_output: Path) -> dict[tuple[str, int], int]:
-    """Load (id, workspaceid, score) rows exported to JSON by Databricks CLI."""
+    """Load (id, workspaceid, score) rows exported to JSON by Databricks CLI.
+
+    Uses isinstance() / .get() with a default of None rather than `or`-chaining
+    so that a score/workspaceid of 0 (falsy) is preserved instead of falling
+    through to the next alternative or raising a KeyError on integer indexing.
+    """
     rows = json.loads(sql_query_output.read_text())
     out: dict[tuple[str, int], int] = {}
     for r in rows:
-        cid = str(r.get("id") or r.get("ID") or r[0])
-        ws_id = int(r.get("workspaceid") or r.get("WORKSPACEID") or r[1])
-        score = int(r.get("score") or r.get("SCORE") or r[2])
-        out[(cid, ws_id)] = score
+        if isinstance(r, dict):
+            cid_raw = r.get("id", r.get("ID"))
+            ws_raw = r.get("workspaceid", r.get("WORKSPACEID"))
+            score_raw = r.get("score", r.get("SCORE"))
+            if cid_raw is None or ws_raw is None or score_raw is None:
+                continue  # malformed row — skip
+        else:
+            # list-shaped: assume column order [id, workspaceid, score].
+            cid_raw, ws_raw, score_raw = r[0], r[1], r[2]
+        out[(str(cid_raw), int(ws_raw))] = int(score_raw)
     return out
 
 
-def diff_results(expected, actual):
+def diff_results(
+    expected: dict[tuple[str, int], int],
+    actual: dict[tuple[str, int], int],
+) -> tuple[set, set, list[tuple[tuple[str, int], int, int]]]:
     only_in_expected = set(expected) - set(actual)
     only_in_actual = set(actual) - set(expected)
     score_mismatches = [
