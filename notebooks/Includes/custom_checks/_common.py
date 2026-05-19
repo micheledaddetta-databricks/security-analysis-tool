@@ -11,10 +11,13 @@ from typing import Any
 ADDITIONAL_DETAILS_VALUE_CAP = 2048  # 2 KB per value
 
 
+_TRUNCATION_SUFFIX = "...[truncated]"
+
+
 def _truncate(value: str) -> str:
     if len(value) <= ADDITIONAL_DETAILS_VALUE_CAP:
         return value
-    return value[: ADDITIONAL_DETAILS_VALUE_CAP - 12] + "...[truncated]"
+    return value[: ADDITIONAL_DETAILS_VALUE_CAP - len(_TRUNCATION_SUFFIX)] + _TRUNCATION_SUFFIX
 
 
 def emit_pass(check_id: str, workspace_id: int, summary: str) -> tuple:
