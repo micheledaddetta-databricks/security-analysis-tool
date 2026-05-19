@@ -65,6 +65,13 @@ json_ = {
 
 # COMMAND ----------
 
+# custom_checks: optional warehouse for system.access.audit queries (C06, C08).
+import os
+json_["audit_warehouse_id"] = (
+    json_.get("audit_warehouse_id")
+    or os.environ.get("DATABRICKS_AUDIT_WAREHOUSE_ID")
+)
+
 intermediate_schema_name = (
     f"{json_['analysis_schema_name'].split('.')[0]}.intermediate_schema"
     if '.' in json_['analysis_schema_name']
