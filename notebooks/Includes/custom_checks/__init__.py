@@ -22,7 +22,12 @@ def run_all(workspace_id: int,
     rows.extend(governance.run_c05(account_client, targets))
     rows.extend(identity.run_c06(account_client, targets, central_ws_client, audit_warehouse_id))
     rows.extend(workloads.run_c07(account_client, targets))
-    # C08 is account-only; only emit it once across the run — gate on first workspace id.
+    # C08 is account-only; we want exactly one row per SAT run. Until the run_id-
+    # keyed cache lands in Task 5, gate on "the first workspace_id reported by
+    # account_client.workspaces.list()". WARNING: this is order-dependent — if SAT
+    # iterates workspaces in a different order than the SDK's list returns, C08
+    # may be emitted for an unexpected workspace_id or skipped. Task 5 replaces
+    # this with a deterministic cache keyed on run_id.
     first_ws_id = getattr(workspaces[0], "workspace_id", None) if workspaces else None
     if workspace_id == first_ws_id:
         rows.extend(identity.run_c08(account_client, central_ws_client, audit_warehouse_id))

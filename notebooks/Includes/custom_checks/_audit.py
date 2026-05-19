@@ -29,10 +29,14 @@ def run_audit_query(ws_client, warehouse_id, sql) -> tuple[list[list], str]:
         while state in (StatementState.PENDING, StatementState.RUNNING) and time.time() < deadline:
             time.sleep(2)
             resp = ws_client.statement_execution.get_statement(statement_id)
-            state = resp.status.state if resp.status else None
+            new_status = resp.status if resp.status else None
+            if new_status is None:
+                # Server returned no status — treat as still pending and keep polling.
+                continue
+            state = new_status.state
         if state != StatementState.SUCCEEDED:
             err = (resp.status.error.message
-                   if (resp.status and resp.status.error) else f"state={state}")
+                   if (resp.status and resp.status.error) else f"final state: {state!r}")
             return [], f"audit query did not succeed: {err}"
         return (resp.result.data_array if resp.result else []) or [], ""
     except Exception as e:

@@ -171,13 +171,16 @@ def run_c06(account_client, workspaces, central_ws_client, audit_warehouse_id):
             continue
         if not admins:
             rows.append(_common.emit_finding("906", ws_id, "workspace has no admins", [],
-                                             severity_note="review"))
+                                             severity_note="no_admins"))
             continue
         details_summary = f"{len(admins)} admin(s)"
         if audit_unavailable:
             details_summary += " (audit_warehouse_id: not configured — last_login unavailable)"
-        rows.append(_common.emit_finding("906", ws_id, details_summary, admins,
-                                         severity_note="review" if audit_unavailable else ""))
+            rows.append(_common.emit_info("906", ws_id, details_summary, admins,
+                                         severity_note="audit_unavailable"))
+        else:
+            rows.append(_common.emit_info("906", ws_id, details_summary, admins,
+                                         severity_note="informational"))
     return rows
 
 

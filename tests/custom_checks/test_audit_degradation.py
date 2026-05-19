@@ -58,7 +58,7 @@ def test_c06_returns_audit_not_available_when_warehouse_id_missing(monkeypatch):
                             audit_warehouse_id=None)
     assert len(rows) == 1
     _, score, details = rows[0]
-    assert score == 1
+    assert score == 0
     assert "audit_warehouse_id" in details["summary"] or "audit not available" in details["findings_json"]
 
 
