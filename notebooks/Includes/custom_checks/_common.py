@@ -40,6 +40,19 @@ def emit_finding(check_id: str, workspace_id: int, summary: str,
     return check_id, 1, details
 
 
+def emit_info(check_id: str, workspace_id: int, summary: str,
+              findings: list[dict], severity_note: str = "informational") -> tuple:
+    """Return a score=0 (informational) tuple that still carries a findings payload."""
+    details: dict[str, str] = {
+        "summary": _truncate(summary),
+        "workspace_id": str(workspace_id),
+        "findings_count": str(len(findings)),
+        "findings_json": _truncate(json.dumps(findings, default=str)),
+        "severity_note": severity_note,
+    }
+    return check_id, 0, details
+
+
 def emit_error(check_id: str, workspace_id: int, error: str,
                summary: str = "audit incomplete",
                error_kind: str = "") -> tuple:

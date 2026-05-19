@@ -54,6 +54,7 @@ def _c07_workspace_rows(ws_client) -> list[dict]:
 
 
 def run_c07(account_client, workspaces: Iterable) -> list[tuple]:
+    """C07: apps deployed without a git repo."""
     rows = []
     for ws in workspaces:
         ws_id = getattr(ws, "workspace_id", 0)
@@ -130,10 +131,12 @@ def run_c11(account_client, workspaces: Iterable) -> list[tuple]:
         except Exception as e:
             rows.append(_common.emit_error("911", ws_id, repr(e), error_kind="ws_client_failed"))
             continue
-        # C11 is informational — always PASS, payload carries the inventory.
-        details_summary = ", ".join(f"{r['feature']}={r['count']}" for r in inventory[:6]) or "no features in use"
-        rows.append(_common.emit_finding("911", ws_id, details_summary, inventory) if inventory
-                    else _common.emit_pass("911", ws_id, "no features in use"))
+        # C11 is informational — always score=0, payload carries the inventory.
+        if inventory:
+            details_summary = ", ".join(f"{r['feature']}={r['count']}" for r in inventory[:6])
+            rows.append(_common.emit_info("911", ws_id, details_summary, inventory))
+        else:
+            rows.append(_common.emit_pass("911", ws_id, "no features in use"))
     return rows
 
 
@@ -176,10 +179,11 @@ def run_c12(account_client, workspaces: Iterable) -> list[tuple]:
         except Exception as e:
             rows.append(_common.emit_error("912", ws_id, repr(e), error_kind="ws_client_failed"))
             continue
+        # C12 is informational — always score=0, payload carries the endpoint inventory.
         if findings:
-            rows.append(_common.emit_finding("912", ws_id,
-                                             f"{len(findings)} LLM-serving endpoint(s)",
-                                             findings))
+            rows.append(_common.emit_info("912", ws_id,
+                                          f"{len(findings)} LLM-serving endpoint(s)",
+                                          findings))
         else:
             rows.append(_common.emit_pass("912", ws_id, "no LLM-serving endpoints"))
     return rows

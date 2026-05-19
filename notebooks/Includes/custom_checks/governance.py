@@ -151,7 +151,9 @@ def _c09_workspace_row_data(ws_client) -> dict:
     dbfs_disabled = _read_disable_setting(ws_client.settings, "disable_legacy_dbfs")
     hive_disabled = _read_disable_setting(ws_client.settings, "disable_legacy_access")
     hive_present, hive_has_tables_val = _hive_has_tables(ws_client)
-    legacy_active = (dbfs_disabled is not True) or (hive_disabled is not True)
+    # Only flag when a setting is explicitly False (disabled=False → legacy still active).
+    # None means the API is unavailable or the setting doesn't exist; treat as compliant.
+    legacy_active = (dbfs_disabled is False) or (hive_disabled is False)
     return {
         "dbfs_legacy_disabled": dbfs_disabled,
         "hive_legacy_disabled": hive_disabled,

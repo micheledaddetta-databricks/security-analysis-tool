@@ -44,9 +44,18 @@ class _EmptyWS:
         return iter([])
 
 
+class _MetastoreAssignments:
+    """Stub that returns a valid metastore assignment so C05 emits PASS."""
+
+    def get(self, workspace_id):
+        inner = SimpleNamespace(metastore_id="m-stub")
+        return SimpleNamespace(metastore_assignment=inner)
+
+
 class _Acct:
     def __init__(self, ws_client):
         self._ws = ws_client
+        self.metastore_assignments = _MetastoreAssignments()
 
     def get_workspace_client(self, _ws):
         return self._ws
@@ -70,4 +79,6 @@ def test_round1_controls_all_return_pass_on_empty_workspace():
     ]:
         rows = fn(acct, targets)
         assert len(rows) == 1, f"{cid} produced {len(rows)} rows"
-        assert rows[0][0] == cid, f"{cid} returned wrong check_id"
+        check_id, score, details = rows[0]
+        assert check_id == cid, f"{cid} returned wrong check_id"
+        assert score == 0, f"{cid} expected score=0 on empty workspace, got {score}"
