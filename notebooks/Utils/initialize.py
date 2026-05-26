@@ -66,10 +66,15 @@ json_ = {
 # COMMAND ----------
 
 # custom_checks: optional warehouse for system.access.audit queries (C06, C08).
+# Precedence: explicit json_["audit_warehouse_id"] > env var > SAT's own
+# sql_warehouse_id (the warehouse SAT was installed against — works for our
+# query too since it can run SELECT on system.access.audit if the SP has
+# the grant).
 import os
 json_["audit_warehouse_id"] = (
     json_.get("audit_warehouse_id")
     or os.environ.get("DATABRICKS_AUDIT_WAREHOUSE_ID")
+    or json_.get("sql_warehouse_id")
 )
 
 intermediate_schema_name = (
